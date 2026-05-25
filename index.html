@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>อนุมัติผลสอบแก้ตัว</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --text:#17263c;
+      --muted:#6b7a90;
+      --line:#d9e3ee;
+      --primary:#2563eb;
+      --primary-dark:#1d4ed8;
+      --success:#0f9d58;
+      --danger:#d92d20;
+      --warning:#b26a00;
+      --shadow:0 10px 30px rgba(18,38,63,.08);
+    }
+
+    *{box-sizing:border-box}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      font-family:'Kanit',sans-serif;
+      background:linear-gradient(90deg,#e89ce5 0%,#b7b3ef 50%,#a7d9ea 100%);
+    }
+
+    .hidden{display:none!important}
+    .wrap{max-width:1420px;margin:0 auto;padding:20px}
+
+    .hero,.card{
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(255,255,255,.55);
+      border-radius:25px;
+      box-shadow:var(--shadow);
+    }
+
+    .hero{
+      padding:26px 28px;
+      margin-bottom:18px;
+      background:linear-gradient(135deg,#245dd8 0%,#2a82ef 60%,#34b4de 100%);
+      color:#fff;
+    }
+
+    .hero-top{
+      display:flex;
+      justify-content:space-between;
+      gap:18px;
+      align-items:flex-start;
+    }
+
+    .hero h1{
+      margin:10px 0 8px;
+      font-size:38px;
+      line-height:1.15;
+    }
+
+    .hero p{
+      margin:0;
+      font-size:19px;
+      font-weight:600;
+      opacity:.95;
+    }
+
+    .badge-school{
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      border:1px solid rgba(255,255,255,.25);
+      background:rgba(255,255,255,.12);
+      border-radius:999px;
+      padding:10px 16px;
+      font-weight:600;
+    }
+
+    .hero-side{
+      border:1px solid rgba(255,255,255,.2);
+      background:rgba(255,255,255,.08);
+      border-radius:24px;
+      padding:18px 22px;
+      min-width:260px;
+    }
+
+    .hero-side-title{
+      opacity:.85;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .hero-side-main{
+      font-size:20px;
+      font-weight:700;
+      margin-top:4px;
+    }
+
+    .login-screen{
+      min-height:100vh;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:18px 20px 28px;
+    }
+
+    .login-shell{
+      width:100%;
+      max-width:1180px;
+    }
+
+    .login-grid{
+      display:grid;
+      grid-template-columns:0.95fr 1.25fr;
+      gap:22px;
+      align-items:stretch;
+    }
+
+    .login-card,
+    .info-card,
+    .top-user,
+    .card{
+      background:rgba(255,255,255,.76);
+      border:1px solid rgba(255,255,255,.55);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+    }
+
+    .login-card,
+    .info-card,
+    .card{
+      padding:24px;
+    }
+
+    .login-card-head,
+    .info-head{
+      display:flex;
+      align-items:flex-start;
+      gap:16px;
+      margin-bottom:16px;
+    }
+
+    .login-icon,
+    .info-icon,
+    .user-icon{
+      width:56px;
+      height:56px;
+      border-radius:18px;
+      background:#dbeafe;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:26px;
+      color:#2563eb;
+      flex:0 0 auto;
+    }
+
+    .login-kicker,
+    .info-kicker{
+      font-size:13px;
+      color:#6366f1;
+      font-weight:700;
+      letter-spacing:.06em;
+      margin-bottom:4px;
+    }
+
+    .login-title,
+    .info-title{
+      font-size:24px;
+      font-weight:800;
+      margin:0;
+      line-height:1.2;
+    }
+
+    .field{margin-bottom:12px}
+
+    .field label,
+    .label-in-form{
+      display:block;
+      margin-bottom:6px;
+      font-size:14px;
+      color:#4d6078;
+      font-weight:600;
+    }
+
+    .input-wrap{position:relative}
+
+    .input-wrap input{
+      width:100%;
+      height:54px;
+      border:1px solid #bfd1e3;
+      border-radius:16px;
+      padding:0 50px 0 50px;
+      font-family:inherit;
+      font-size:15px;
+      font-weight:500;
+      background:#fff;
+      outline:none;
+      color:var(--text);
+    }
+
+    .input-wrap input:focus,
+    input.std:focus,
+    select.std:focus,
+    textarea.std:focus{
+      border-color:var(--primary);
+      box-shadow:0 0 0 4px rgba(37,99,235,.12);
+    }
+
+    .input-icon{
+      position:absolute;
+      left:16px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:20px;
+      color:#8aa0b6;
+      pointer-events:none;
+    }
+
+    .input-action{
+      position:absolute;
+      right:16px;
+      top:50%;
+      transform:translateY(-50%);
+      font-size:19px;
+      color:#8aa0b6;
+      cursor:pointer;
+      user-select:none;
+    }
+
+    .login-btn{
+      width:100%;
+      height:54px;
+      border:0;
+      border-radius:16px;
+      background:linear-gradient(135deg,#2563eb,#60a5fa);
+      color:#fff;
+      font-family:inherit;
+      font-size:19px;
+      font-weight:700;
+      cursor:pointer;
+      margin-top:6px;
+    }
+
+    .login-note,
+    .info-box{
+      margin-top:14px;
+      padding:14px 16px;
+      border:1px solid #d5e1eb;
+      border-radius:16px;
+      background:#eef3f8;
+      color:#56697f;
+      font-size:14px;
+      line-height:1.7;
+    }
+
+    .status{
+      margin-top:10px;
+      min-height:24px;
+      font-size:14px;
+      font-weight:500;
+    }
+
+    .status.info{color:var(--primary-dark)}
+    .status.success{color:var(--success)}
+    .status.error{color:var(--danger)}
+    .status.warn{color:var(--warning)}
+
+    .top-user{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:16px;
+      padding:18px 22px;
+      margin-bottom:14px;
+    }
+
+    .user-box{
+      display:flex;
+      align-items:center;
+      gap:14px;
+    }
+
+    .user-text b{
+      display:block;
+      font-size:18px;
+    }
+
+    .user-text span{color:var(--muted)}
+
+    .user-actions{
+      display:flex;
+      gap:12px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .user-pill{
+      min-height:44px;
+      padding:8px 18px;
+      display:flex;
+      align-items:center;
+      border-radius:15px;
+      background:#f8fbff;
+      border:1px solid var(--line);
+      font-weight:700;
+    }
+
+    button{
+      height:44px;
+      border:0;
+      border-radius:15px;
+      padding:0 18px;
+      font-family:inherit;
+      font-size:15px;
+      cursor:pointer;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#2563eb,#3b82f6);
+      color:#fff;
+      font-weight:700;
+    }
+
+    .btn-secondary{
+      background:#ecf2f8;
+      color:var(--text);
+    }
+
+    .btn-danger{
+      background:#fff0ef;
+      color:var(--danger);
+      border:1px solid #ffd2cf;
+    }
+
+    .btn-success{
+      background:#e9f8ef;
+      color:#0f9d58;
+      border:1px solid #bfe6cb;
+      font-weight:700;
+    }
+
+    .btn-warn{
+      background:#fff7ea;
+      color:#b26a00;
+      border:1px solid #ffe0aa;
+      font-weight:700;
+    }
+
+    input.std,
+    select.std,
+    textarea.std{
+      width:100%;
+      min-height:42px;
+      border:1px solid #c8d6e4;
+      border-radius:14px;
+      padding:0 14px;
+      font-family:inherit;
+      font-size:15px;
+      outline:none;
+      background:#fff;
+    }
+
+    textarea.std{
+      padding:10px 14px;
+      min-height:82px;
+      resize:vertical;
+    }
+
+    .toolbar{
+      display:grid;
+      grid-template-columns:1fr 1fr 1.2fr 1.3fr 180px;
+      gap:10px 12px;
+      margin-bottom:14px;
+    }
+
+    .approval-toolbar-status-only{
+  grid-template-columns:260px 180px;
+  justify-content:start;
+  align-items:end;
+}
+
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(4,1fr);
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .summary-card{
+      background:#f8fbff;
+      border:1px solid #d8e4ef;
+      border-radius:18px;
+      padding:14px 16px;
+    }
+
+    .summary-label{
+      font-size:12px;
+      color:#6b7a90;
+      font-weight:700;
+    }
+
+    .summary-value{
+      font-size:22px;
+      font-weight:800;
+      margin-top:8px;
+      color:#17324d;
+    }
+
+    .table-wrap{
+      overflow:auto;
+      border:1px solid var(--line);
+      border-radius:18px;
+      background:#fff;
+    }
+
+    table{
+      width:100%;
+      min-width:1320px;
+      border-collapse:collapse;
+    }
+
+    th,td{
+      padding:14px 14px;
+      border-bottom:1px solid var(--line);
+      text-align:left;
+      vertical-align:middle;
+      font-size:14px;
+    }
+
+    th{
+      background:#f8fbff;
+      color:#41536c;
+      position:sticky;
+      top:0;
+      z-index:1;
+    }
+
+    .text-center{text-align:center!important}
+
+    .mono{
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-weight:700;
+    }
+
+    .small{
+      font-size:12px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+
+    .empty-state{
+      padding:36px 18px;
+      text-align:center;
+      color:#6b7a90;
+      font-size:14px;
+    }
+
+    .student-main,
+    .subject-main{
+      font-weight:700;
+      color:#17263c;
+      line-height:1.45;
+    }
+
+    .student-sub,
+    .subject-sub{
+      font-size:12px;
+      color:#6b7a90;
+      margin-top:2px;
+      line-height:1.5;
+    }
+
+    .grade-pill{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-width:64px;
+      padding:7px 14px;
+      border-radius:999px;
+      border:1px solid #dbe7f3;
+      background:#f8fbff;
+      color:#17324a;
+      font-family:'Sarabun',sans-serif;
+      font-size:16px;
+      font-weight:800;
+      line-height:1;
+      letter-spacing:.2px;
+    }
+
+    .grade-pill.fail{
+      background:linear-gradient(180deg,#fff1f2,#fee2e2);
+      color:#b91c1c;
+      border-color:#fecaca;
+    }
+
+    .grade-pill.pass{
+      background:linear-gradient(180deg,#f0fdf4,#dcfce7);
+      color:#166534;
+      border-color:#bbf7d0;
+    }
+
+    .status-badge{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:30px;
+      padding:5px 11px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:800;
+      border:1px solid transparent;
+      white-space:nowrap;
+    }
+
+    .status-badge.pending{
+      background:#fff7ea;
+      color:#b26a00;
+      border-color:#ffe0aa;
+    }
+
+    .status-badge.approved{
+      background:#e9f8ef;
+      color:#0f9d58;
+      border-color:#bfe6cb;
+    }
+
+    .status-badge.rejected{
+      background:#fff0ef;
+      color:#d92d20;
+      border-color:#ffd2cf;
+    }
+
+    .action-wrap{
+      display:flex;
+      justify-content:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .mini-btn{
+      height:36px;
+      border-radius:13px;
+      padding:0 13px;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .reject-box{
+      display:grid;
+      grid-template-columns:1fr;
+      gap:8px;
+      min-width:220px;
+    }
+
+    .toast-wrap{
+      position:fixed;
+      top:18px;
+      right:18px;
+      z-index:100;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .toast{
+      min-width:320px;
+      max-width:420px;
+      background:#fff;
+      border:1px solid var(--line);
+      border-left:6px solid var(--primary);
+      border-radius:20px;
+      box-shadow:var(--shadow);
+      padding:16px 18px;
+      animation:slideIn .28s ease;
+    }
+
+    .toast.success{border-left-color:var(--success)}
+    .toast.error{border-left-color:var(--danger)}
+    .toast.warn{border-left-color:var(--warning)}
+
+    .toast-title{
+      font-size:16px;
+      font-weight:700;
+      margin-bottom:4px;
+    }
+
+    .toast-text{
+      font-size:14px;
+      color:var(--muted);
+      line-height:1.55;
+    }
+
+    @keyframes slideIn{
+      from{opacity:0;transform:translateY(-8px) translateX(20px)}
+      to{opacity:1;transform:none}
+    }
+
+    @media (max-width:1100px){
+      .login-grid,
+      .toolbar,
+      .summary{
+        grid-template-columns:1fr 1fr;
+      }
+
+      .hero-top{
+        flex-direction:column;
+      }
+
+      .hero-side{
+        width:100%;
+        min-width:0;
+      }
+    }
+
+    @media (max-width:720px){
+      .wrap{padding:14px}
+      .login-screen{padding:14px}
+
+      .login-grid,
+      .toolbar,
+      .summary{
+        grid-template-columns:1fr;
+      }
+
+      .hero h1{font-size:30px}
+
+      .top-user{
+        flex-direction:column;
+        align-items:stretch;
+      }
+
+      .user-actions{
+        width:100%;
+        flex-direction:column;
+      }
+
+      .user-pill,
+      .user-actions button{
+        width:100%;
+        justify-content:center;
+      }
+
+      .toast-wrap{
+        left:14px;
+        right:14px;
+        top:14px;
+      }
+
+      .toast{
+        min-width:0;
+        max-width:none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div id="loginView" class="login-screen">
+    <div class="login-shell">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="badge-school">🏫 โรงเรียนท่าใหม่ “พูลสวัสดิ์ราษฎร์นุกูล”</div>
+            <h1>อนุมัติผลสอบแก้ตัว</h1>
+            <p>สำหรับนายทะเบียน / ผู้ใช้รหัส G เท่านั้น</p>
+          </div>
+          <div class="hero-side">
+            <div class="hero-side-title">ฝ่ายวิชาการ</div>
+            <div class="hero-side-main">งานทะเบียน–วัดผล</div>
+          </div>
+        </div>
+      </section>
+
+      <div class="login-grid">
+        <section class="login-card">
+          <div class="login-card-head">
+            <div class="login-icon">✅</div>
+            <div>
+              <div class="login-kicker">APPROVAL LOGIN</div>
+              <h2 class="login-title">เข้าสู่ระบบผู้อนุมัติ</h2>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="loginTeacherCode">ชื่อผู้ใช้</label>
+            <div class="input-wrap">
+              <span class="input-icon">👤</span>
+              <input id="loginTeacherCode" type="text" placeholder="เช่น G001">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="loginPassword">รหัสผ่าน</label>
+            <div class="input-wrap">
+              <span class="input-icon">🔒</span>
+              <input id="loginPassword" type="password" placeholder="กรอกรหัสผ่าน">
+              <span id="togglePasswordBtn" class="input-action">👁️</span>
+            </div>
+          </div>
+
+          <button id="loginBtn" class="login-btn">↪ เข้าสู่ระบบ</button>
+          <div id="loginStatus" class="status info"></div>
+
+          <div class="login-note">
+            ℹ️ หน้านี้อนุญาตเฉพาะผู้ใช้รหัส <strong>G</strong><br>
+            ℹ️ ใช้สำหรับอนุมัติผลสอบแก้ตัวที่ครูผู้สอนส่งมา
+          </div>
+        </section>
+
+        <section class="info-card">
+          <div class="info-head">
+            <div class="info-icon">📌</div>
+            <div>
+              <div class="info-kicker">WORKFLOW</div>
+              <h2 class="info-title">หลักการทำงาน</h2>
+            </div>
+          </div>
+
+          <div class="info-box">
+            <div><strong>1.</strong> ครูผู้สอนส่งผลสอบแก้ตัวเข้าตาราง <span class="mono">grade_retest_requests</span></div>
+            <div><strong>2.</strong> ระบบยังไม่แก้ไข <span class="mono">grade_results.retest_grade_code</span></div>
+            <div><strong>3.</strong> นายทะเบียนกดอนุมัติในหน้านี้</div>
+            <div><strong>4.</strong> ระบบจึงเขียนผลแก้ตัวกลับเข้า <span class="mono">grade_results</span></div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </div>
+
+  <div id="appView" class="hidden">
+    <div class="wrap">
+      <section class="hero">
+        <div class="hero-top">
+          <div>
+            <div class="badge-school">🏫 โรงเรียนท่าใหม่ “พูลสวัสดิ์ราษฎร์นุกูล”</div>
+            <h1>อนุมัติผลสอบแก้ตัว</h1>
+            <p>ตรวจสอบรายการที่ครูผู้สอนส่งมา ก่อนบันทึกเป็นผลจริง</p>
+          </div>
+          <div class="hero-side">
+            <div class="hero-side-title">ฝ่ายบริการ</div>
+            <div class="hero-side-main">งานทะเบียน–วัดผล</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="top-user card">
+        <div class="user-box">
+          <div class="user-icon">🧾</div>
+          <div class="user-text">
+            <b>ผู้อนุมัติ</b>
+            <span>Registrar / Academic Staff</span>
+          </div>
+        </div>
+
+        <div class="user-actions">
+          <div id="currentUserBox" class="user-pill">-</div>
+          <button id="logoutBtn" class="btn-danger">ออกจากระบบ</button>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 style="margin:0 0 8px;">รายการรออนุมัติผลสอบแก้ตัว</h2>
+        <div class="small" style="margin-bottom:14px;">
+          ตารางจะยังไม่โหลดทันที กรุณาเลือกเงื่อนไขแล้วกด “แสดงรายการ”
+        </div>
+
+<div class="toolbar approval-toolbar-status-only">
+  <div class="field">
+    <span class="label-in-form">สถานะ</span>
+    <select id="filterStatus" class="std">
+      <option value="pending_approval">รออนุมัติ</option>
+      <option value="approved">อนุมัติแล้ว</option>
+      <option value="rejected">ไม่อนุมัติ</option>
+      <option value="">ทั้งหมด</option>
+    </select>
+  </div>
+
+  <div class="field">
+    <span class="label-in-form">&nbsp;</span>
+    <button id="loadBtn" class="btn-primary" type="button" style="width:100%;">แสดงรายการ</button>
+  </div>
+</div>
+
+        <div class="summary">
+          <div class="summary-card">
+            <div class="summary-label">รายการทั้งหมด</div>
+            <div id="sumTotal" class="summary-value">0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">รออนุมัติ</div>
+            <div id="sumPending" class="summary-value">0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">อนุมัติแล้ว</div>
+            <div id="sumApproved" class="summary-value">0</div>
+          </div>
+
+          <div class="summary-card">
+            <div class="summary-label">ไม่อนุมัติ</div>
+            <div id="sumRejected" class="summary-value">0</div>
+          </div>
+        </div>
+
+        <div id="listStatus" class="status info">
+          กรุณาเลือกเงื่อนไขแล้วกดแสดงรายการ
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;" class="text-center">รหัสนักเรียน</th>
+                <th style="width:220px;">ชื่อ-สกุล นักเรียน</th>
+                <th style="width:120px;" class="text-center">รหัสวิชา</th>
+                <th>ชื่อวิชา</th>
+                <th style="width:110px;" class="text-center">ผลเดิม</th>
+                <th style="width:130px;" class="text-center">ผลแก้ตัว</th>
+                <th style="width:120px;" class="text-center">สถานะ</th>
+                <th style="width:150px;" class="text-center">ครูผู้ส่ง</th>
+                <th style="width:260px;" class="text-center">จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="approvalTbody">
+              <tr>
+                <td colspan="9" class="empty-state">กรุณาเลือกเงื่อนไขก่อนแสดงรายการ</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <div id="toastWrap" class="toast-wrap"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://jiorecubzlmfhwalhrsz.supabase.co';
+    const SUPABASE_ANON_KEY = 'sb_publishable_bvvfwIdiPxyN2hYXVogVHQ_QxXE0I1_';
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const el = (id) => document.getElementById(id);
+
+    const state = {
+      currentUser: null,
+      rows: [],
+      rejectingId: null
+    };
+
+    function escapeHtml(text){
+      return String(text ?? '')
+        .replaceAll('&','&amp;')
+        .replaceAll('<','&lt;')
+        .replaceAll('>','&gt;')
+        .replaceAll('"','&quot;')
+        .replaceAll("'","&#039;");
+    }
+
+    function safeText(value, fallback=''){
+      const s = String(value ?? '').trim();
+      return s || fallback;
+    }
+
+    function safeNum(v){
+      if(v === null || v === undefined || v === '') return null;
+      const n = Number(v);
+      return Number.isNaN(n) ? null : n;
+    }
+
+    function normalizeTeacherCode(raw){
+      const s = String(raw || '').trim().toUpperCase();
+      if(!s) return '';
+      if(s.startsWith('G')) return s;
+      if(/^\d+$/.test(s)) return `G${s}`;
+      return s;
+    }
+
+
+    function isRegistrarPageAllowed(code){
+      return String(code || '').trim().toUpperCase().startsWith('G');
+    }
+
+    async function loginWithRegistrarRpc(teacherCodeRaw, passwordRaw){
+      const teacherCode = normalizeTeacherCode(teacherCodeRaw);
+      const password = String(passwordRaw || '').trim();
+
+      if(!teacherCode){
+        throw new Error('กรุณากรอกรหัสผู้ใช้');
+      }
+
+      if(!isRegistrarPageAllowed(teacherCode)){
+        throw new Error('หน้านี้อนุญาตเฉพาะผู้ใช้รหัส G เท่านั้น');
+      }
+
+      if(!password){
+        throw new Error('กรุณากรอกรหัสผ่าน');
+      }
+
+      const { data, error } = await supabaseClient.rpc('login_teacher', {
+        p_teacher_code: teacherCode,
+        p_password: password
+      });
+
+      if(error) throw error;
+
+      if(!data || data.ok !== true || !data.user){
+        throw new Error(data?.message || 'รหัสผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
+      }
+
+      const user = data.user || {};
+      const code = String(user.teacher_code || '').trim().toUpperCase();
+
+      if(!isRegistrarPageAllowed(code)){
+        throw new Error('บัญชีนี้ไม่มีสิทธิ์เข้าใช้งานหน้าอนุมัติ');
+      }
+
+      return {
+        id: user.id || '',
+        teacher_code: user.teacher_code || '',
+        first_name: user.first_name || '',
+        last_name: user.last_name || '',
+        full_name: user.full_name || [user.first_name || '', user.last_name || ''].join(' ').trim() || user.teacher_code,
+        role_prefix: code.charAt(0),
+        teacher_role: user.teacher_role || 'registrar',
+        is_active: user.is_active !== false
+      };
+    }
+
+    function normalizeGradeValue(grade){
+      const g = String(grade || '').trim().toUpperCase();
+      if(!g) return '';
+      if(g === 'ร' || g === 'R') return 'ร';
+      if(g === 'มส') return 'มส';
+      if(g === 'ผ') return 'ผ';
+      if(g === 'มผ') return 'มผ';
+
+      const n = Number(g);
+      if(!Number.isNaN(n)){
+        return Number.isInteger(n) ? String(n) : String(n);
+      }
+
+      return String(grade || '').trim();
+    }
+
+    function setStatus(id, text, type='info'){
+      const n = el(id);
+      if(!n) return;
+      n.textContent = text;
+      n.className = `status ${type}`;
+    }
+
+    function showToast(title, text, type='success'){
+      const wrap = el('toastWrap');
+      const node = document.createElement('div');
+      node.className = `toast ${type}`;
+      node.innerHTML = `
+        <div class="toast-title">${escapeHtml(title)}</div>
+        <div class="toast-text">${escapeHtml(text)}</div>
+      `;
+      wrap.appendChild(node);
+      setTimeout(() => node.remove(), 3600);
+    }
+
+
+
+function initDefaultFilters(){
+  el('filterStatus').value = 'pending_approval';
+}
+
+    function saveSession(){
+      if(!state.currentUser) return;
+      sessionStorage.setItem('retestApprovalUser', JSON.stringify(state.currentUser));
+    }
+
+    function restoreSession(){
+      try{
+        const raw = sessionStorage.getItem('retestApprovalUser');
+        if(!raw) return false;
+
+        state.currentUser = JSON.parse(raw);
+
+        if(!isRegistrarPageAllowed(state.currentUser.teacher_code)){
+          return false;
+        }
+
+        el('loginView').classList.add('hidden');
+        el('appView').classList.remove('hidden');
+        el('currentUserBox').innerHTML = `${escapeHtml(state.currentUser.teacher_code)} ${escapeHtml(state.currentUser.full_name || '')}`;
+        return true;
+      }catch(e){
+        return false;
+      }
+    }
+
+    function togglePassword(){
+      const input = el('loginPassword');
+      const btn = el('togglePasswordBtn');
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      btn.textContent = isPassword ? '🙈' : '👁️';
+    }
+
+    async function login(){
+      try{
+        setStatus('loginStatus','กำลังตรวจสอบสิทธิ์...','info');
+
+        const user = await loginWithRegistrarRpc(
+          el('loginTeacherCode').value,
+          el('loginPassword').value
+        );
+
+        state.currentUser = user;
+        saveSession();
+
+        el('loginView').classList.add('hidden');
+        el('appView').classList.remove('hidden');
+        el('currentUserBox').innerHTML = `${escapeHtml(state.currentUser.teacher_code)} ${escapeHtml(state.currentUser.full_name || '')}`;
+
+        showToast(
+          'เข้าสู่ระบบสำเร็จ',
+          `ยินดีต้อนรับ ${state.currentUser.full_name || state.currentUser.teacher_code}`,
+          'success'
+        );
+      }catch(err){
+        const msg = err?.message || 'เข้าสู่ระบบไม่สำเร็จ';
+        setStatus('loginStatus', msg, 'error');
+        showToast('เข้าสู่ระบบไม่สำเร็จ', msg, 'error');
+      }
+    }
+
+    function logout(){
+      state.currentUser = null;
+      state.rows = [];
+      state.rejectingId = null;
+
+      sessionStorage.removeItem('retestApprovalUser');
+
+      el('appView').classList.add('hidden');
+      el('loginView').classList.remove('hidden');
+      el('loginPassword').value = '';
+
+      resetList();
+      setStatus('loginStatus','ออกจากระบบแล้ว','info');
+    }
+
+    function resetSummary(){
+      el('sumTotal').textContent = '0';
+      el('sumPending').textContent = '0';
+      el('sumApproved').textContent = '0';
+      el('sumRejected').textContent = '0';
+    }
+
+    function resetList(){
+      state.rows = [];
+      state.rejectingId = null;
+      resetSummary();
+      el('approvalTbody').innerHTML = `
+        <tr>
+          <td colspan="9" class="empty-state">กรุณาเลือกเงื่อนไขก่อนแสดงรายการ</td>
+        </tr>
+      `;
+      setStatus('listStatus','กรุณาเลือกเงื่อนไขแล้วกดแสดงรายการ','info');
+    }
+
+    function updateSummary(rows){
+      el('sumTotal').textContent = String(rows.length);
+      el('sumPending').textContent = String(rows.filter(r => r.status === 'pending_approval').length);
+      el('sumApproved').textContent = String(rows.filter(r => r.status === 'approved').length);
+      el('sumRejected').textContent = String(rows.filter(r => r.status === 'rejected').length);
+    }
+
+    function renderGradePill(grade){
+      const g = normalizeGradeValue(grade);
+      const pass = ['1','1.5','2','2.5','3','3.5','4','ผ'].includes(g);
+      return `<span class="grade-pill ${pass ? 'pass' : 'fail'}">${escapeHtml(g || '-')}</span>`;
+    }
+
+    function getStatusText(status){
+      if(status === 'pending_approval') return 'รออนุมัติ';
+      if(status === 'approved') return 'อนุมัติแล้ว';
+      if(status === 'rejected') return 'ไม่อนุมัติ';
+      return '-';
+    }
+
+    function renderStatusBadge(status){
+      const s = safeText(status, '');
+      const cls = s === 'approved' ? 'approved' : (s === 'rejected' ? 'rejected' : 'pending');
+      return `<span class="status-badge ${cls}">${escapeHtml(getStatusText(s))}</span>`;
+    }
+
+    function formatThaiDateTime(value){
+      if(!value) return '-';
+      const d = new Date(value);
+      if(Number.isNaN(d.getTime())) return String(value);
+      return d.toLocaleString('th-TH', {
+        year:'numeric',
+        month:'short',
+        day:'numeric',
+        hour:'2-digit',
+        minute:'2-digit'
+      });
+    }
+
+    function getRowById(id){
+      return state.rows.find(r => String(r.id) === String(id)) || null;
+    }
+
+    function renderRows(rows){
+      const tbody = el('approvalTbody');
+
+      if(!rows.length){
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="empty-state">ไม่พบรายการตามเงื่อนไขที่เลือก</td>
+          </tr>
+        `;
+        updateSummary([]);
+        return;
+      }
+
+      updateSummary(rows);
+
+      tbody.innerHTML = rows.map(row => {
+        const isRejecting = state.rejectingId === String(row.id);
+        const canApprove = row.status === 'pending_approval';
+        const teacherText = safeText(row.teacher_code, '-') || '-';
+
+        let actionHtml = '';
+
+        if(row.status === 'approved'){
+          actionHtml = `
+            <div class="action-wrap">
+              ${renderStatusBadge('approved')}
+            </div>
+          `;
+        }else if(row.status === 'rejected'){
+          actionHtml = `
+            <div class="action-wrap">
+              ${renderStatusBadge('rejected')}
+            </div>
+            <div class="small" style="margin-top:6px;text-align:left;">
+              ${escapeHtml(safeText(row.rejected_reason, ''))}
+            </div>
+          `;
+        }else if(isRejecting){
+          actionHtml = `
+            <div class="reject-box">
+              <textarea class="std" data-reject-reason="${escapeHtml(row.id)}" placeholder="ระบุเหตุผลไม่อนุมัติ"></textarea>
+              <div class="action-wrap">
+                <button class="btn-danger mini-btn" type="button" data-reject-confirm="${escapeHtml(row.id)}">ยืนยันไม่อนุมัติ</button>
+                <button class="btn-secondary mini-btn" type="button" data-reject-cancel="${escapeHtml(row.id)}">ยกเลิก</button>
+              </div>
+            </div>
+          `;
+        }else if(canApprove){
+          actionHtml = `
+            <div class="action-wrap">
+              <button class="btn-success mini-btn" type="button" data-approve-id="${escapeHtml(row.id)}">อนุมัติ</button>
+              <button class="btn-danger mini-btn" type="button" data-reject-id="${escapeHtml(row.id)}">ไม่อนุมัติ</button>
+            </div>
+          `;
+        }else{
+          actionHtml = `<div class="action-wrap">${renderStatusBadge(row.status)}</div>`;
+        }
+
+        return `
+          <tr>
+            <td class="text-center mono">${escapeHtml(safeText(row.student_code, '-'))}</td>
+
+            <td>
+              <div class="student-main">${escapeHtml(safeText(row.student_name, '-'))}</div>
+              <div class="student-sub">
+                ชั้น ${escapeHtml(safeText(row.class_level, '-'))}/${escapeHtml(safeText(row.room, '-'))}
+              </div>
+            </td>
+
+            <td class="text-center mono">${escapeHtml(safeText(row.subject_code, '-'))}</td>
+
+            <td>
+              <div class="subject-main">${escapeHtml(safeText(row.subject_name, '-'))}</div>
+              <div class="subject-sub">
+                ปี ${escapeHtml(safeText(row.academic_year, '-'))}
+                / เทอม ${escapeHtml(safeText(row.term, '-'))}
+                <br>ส่งเมื่อ ${escapeHtml(formatThaiDateTime(row.submitted_at))}
+              </div>
+            </td>
+
+            <td class="text-center">${renderGradePill(row.original_grade_code)}</td>
+            <td class="text-center">${renderGradePill(row.requested_retest_grade_code)}</td>
+            <td class="text-center">${renderStatusBadge(row.status)}</td>
+
+            <td class="text-center">
+              <div class="mono">${escapeHtml(teacherText)}</div>
+            </td>
+
+            <td class="text-center">${actionHtml}</td>
+          </tr>
+        `;
+      }).join('');
+
+      bindRowButtons();
+    }
+
+    function bindRowButtons(){
+      el('approvalTbody').querySelectorAll('[data-approve-id]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = String(btn.dataset.approveId || '');
+          await approveRequest(id);
+        });
+      });
+
+      el('approvalTbody').querySelectorAll('[data-reject-id]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.rejectingId = String(btn.dataset.rejectId || '');
+          renderRows(state.rows);
+        });
+      });
+
+      el('approvalTbody').querySelectorAll('[data-reject-cancel]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          state.rejectingId = null;
+          renderRows(state.rows);
+        });
+      });
+
+      el('approvalTbody').querySelectorAll('[data-reject-confirm]').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const id = String(btn.dataset.rejectConfirm || '');
+          const reasonNode = document.querySelector(`[data-reject-reason="${CSS.escape(id)}"]`);
+          const reason = safeText(reasonNode?.value, '');
+          await rejectRequest(id, reason);
+        });
+      });
+    }
+
+function hasSearchCriteria(){
+  return true;
+}
+
+    async function loadRows(){
+      try{
+        if(!state.currentUser?.id){
+          throw new Error('ไม่พบข้อมูลผู้เข้าสู่ระบบ');
+        }
+
+        if(!hasSearchCriteria()){
+          resetList();
+          setStatus('listStatus','กรุณาเลือกเงื่อนไขก่อนแสดงรายการ','warn');
+          return;
+        }
+
+        state.rejectingId = null;
+
+       const status = safeText(el('filterStatus').value, '');
+
+        let query = supabaseClient
+          .from('grade_retest_requests')
+          .select(`
+            id,
+            grade_result_id,
+            student_id,
+            student_code,
+            student_name,
+            subject_offering_id,
+            subject_id,
+            subject_code,
+            subject_name,
+            teacher_id,
+            teacher_code,
+            academic_year,
+            term,
+            class_level,
+            room,
+            original_grade_code,
+            requested_retest_grade_code,
+            status,
+            submitted_at,
+            updated_at,
+            approved_at,
+            rejected_at,
+            rejected_reason,
+            is_active
+          `)
+          .eq('is_active', true)
+          .order('submitted_at', { ascending:false });
+
+if(status){
+  query = query.eq('status', status);
+}
+
+        setStatus('listStatus','กำลังโหลดรายการ...', 'info');
+
+        const { data, error } = await query;
+        if(error) throw error;
+
+        state.rows = data || [];
+        renderRows(state.rows);
+
+        if(state.rows.length){
+          setStatus('listStatus', `พบรายการ ${state.rows.length} รายการ`, 'success');
+        }else{
+          setStatus('listStatus', 'ไม่พบรายการตามเงื่อนไขที่เลือก', 'warn');
+        }
+      }catch(err){
+        console.error('loadRows ERROR', err);
+        state.rows = [];
+        renderRows([]);
+        setStatus('listStatus', err.message || 'โหลดรายการไม่สำเร็จ', 'error');
+        showToast('โหลดรายการไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    }
+
+async function approveRequest(requestId){
+  try{
+    const row = getRowById(requestId);
+
+    if(!row){
+      throw new Error('ไม่พบรายการที่ต้องการอนุมัติ');
+    }
+
+    if(row.status !== 'pending_approval'){
+      throw new Error('รายการนี้ไม่ได้อยู่ในสถานะรออนุมัติ');
+    }
+
+    if(!row.grade_result_id){
+      throw new Error('ไม่พบ grade_result_id');
+    }
+
+    const approvedAt = new Date().toISOString();
+    const approvedGrade = normalizeGradeValue(row.requested_retest_grade_code);
+
+    if(!approvedGrade){
+      throw new Error('ไม่พบผลสอบแก้ตัวที่ต้องการอนุมัติ');
+    }
+
+    setStatus('listStatus','กำลังอนุมัติผลสอบแก้ตัว...', 'info');
+
+    // 1) อัปเดตผลสอบแก้ตัวเข้า grade_results เฉพาะตอนอนุมัติ
+    // ไม่แตะ grading_status เพื่อลดปัญหา constraint / enum ในฐานข้อมูล
+    const { data: gradeData, error: gradeError } = await supabaseClient
+      .from('grade_results')
+      .update({
+        retest_grade_code: approvedGrade
+      })
+      .eq('id', row.grade_result_id)
+      .select('id, retest_grade_code');
+
+    if(gradeError) throw gradeError;
+
+    if(!gradeData || !gradeData.length){
+      throw new Error('ไม่พบรายการ grade_results ที่ต้องการอัปเดต หรือไม่มีสิทธิ์อัปเดต');
+    }
+
+    // 2) เปลี่ยนสถานะคำขอเป็น approved
+    const { data: reqData, error: reqError } = await supabaseClient
+      .from('grade_retest_requests')
+      .update({
+        status: 'approved',
+        approved_at: approvedAt,
+        approved_by: state.currentUser.id,
+        updated_at: approvedAt,
+
+        rejected_at: null,
+        rejected_by: null,
+        rejected_reason: null
+      })
+      .eq('id', requestId)
+      .eq('status', 'pending_approval')
+      .eq('is_active', true)
+      .select('id, status');
+
+    if(reqError) throw reqError;
+
+    if(!reqData || !reqData.length){
+      throw new Error('อัปเดตสถานะคำขอไม่สำเร็จ หรือรายการนี้ไม่อยู่ในสถานะรออนุมัติแล้ว');
+    }
+
+    showToast(
+      'อนุมัติสำเร็จ',
+      `อนุมัติผลสอบแก้ตัวของ ${row.student_name} แล้ว`,
+      'success'
+    );
+
+    await loadRows();
+  }catch(err){
+    console.error('approveRequest ERROR', err);
+
+    const msg = err?.message || err?.details || err?.hint || 'อนุมัติไม่สำเร็จ';
+
+    setStatus('listStatus', msg, 'error');
+    showToast('อนุมัติไม่สำเร็จ', msg, 'error');
+  }
+}
+
+    async function rejectRequest(requestId, reason){
+      try{
+        const row = getRowById(requestId);
+
+        if(!row){
+          throw new Error('ไม่พบรายการที่ต้องการไม่อนุมัติ');
+        }
+
+        if(row.status !== 'pending_approval'){
+          throw new Error('รายการนี้ไม่ได้อยู่ในสถานะรออนุมัติ');
+        }
+
+        if(!reason){
+          throw new Error('กรุณาระบุเหตุผลที่ไม่อนุมัติ');
+        }
+
+        const rejectedAt = new Date().toISOString();
+
+        setStatus('listStatus','กำลังบันทึกผลไม่อนุมัติ...', 'info');
+
+        const { error } = await supabaseClient
+          .from('grade_retest_requests')
+          .update({
+            status: 'rejected',
+            rejected_at: rejectedAt,
+            rejected_by: state.currentUser.id,
+            rejected_reason: reason,
+            updated_at: rejectedAt
+          })
+          .eq('id', requestId)
+          .eq('status', 'pending_approval')
+          .eq('is_active', true);
+
+        if(error) throw error;
+
+        state.rejectingId = null;
+
+        showToast(
+          'บันทึกไม่อนุมัติแล้ว',
+          `รายการของ ${row.student_name} ถูกเปลี่ยนเป็นไม่อนุมัติ`,
+          'success'
+        );
+
+        await loadRows();
+      }catch(err){
+        console.error('rejectRequest ERROR', err);
+        setStatus('listStatus', err.message || 'บันทึกไม่อนุมัติไม่สำเร็จ', 'error');
+        showToast('ไม่อนุมัติไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+      }
+    }
+
+    function clearLoadedRowsOnFilterChange(message){
+      state.rows = [];
+      state.rejectingId = null;
+      renderRows([]);
+      setStatus('listStatus', message, 'info');
+    }
+
+    function bindEvents(){
+      el('togglePasswordBtn').addEventListener('click', togglePassword);
+      el('loginBtn').addEventListener('click', login);
+      el('logoutBtn').addEventListener('click', logout);
+
+      el('loginTeacherCode').addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') login();
+      });
+
+      el('loginPassword').addEventListener('keydown', (e) => {
+        if(e.key === 'Enter') login();
+      });
+
+      el('loadBtn').addEventListener('click', loadRows);
+
+     el('filterStatus').addEventListener('change', () => {
+  clearLoadedRowsOnFilterChange('เปลี่ยนสถานะแล้ว กรุณากดแสดงรายการอีกครั้ง');
+});
+    }
+
+    function init(){
+      initDefaultFilters();
+      bindEvents();
+      resetSummary();
+
+      if(restoreSession()){
+        setStatus('listStatus','กรุณาเลือกเงื่อนไขแล้วกดแสดงรายการ','info');
+      }else{
+        setStatus('loginStatus','กรุณาเข้าสู่ระบบก่อนใช้งาน','info');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>
