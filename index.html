@@ -1248,78 +1248,120 @@ function hasSearchCriteria(){
   return true;
 }
 
-    async function loadRows(){
-      try{
-        if(!state.currentUser?.id){
-          throw new Error('ไม่พบข้อมูลผู้เข้าสู่ระบบ');
-        }
+const RETEST_REQUEST_SELECT = `
+  id,
+  grade_result_id,
+  student_id,
+  student_code,
+  student_name,
+  subject_offering_id,
+  subject_id,
+  subject_code,
+  subject_name,
+  teacher_id,
+  teacher_code,
+  academic_year,
+  term,
+  class_level,
+  room,
+  original_grade_code,
+  requested_retest_grade_code,
+  status,
+  submitted_at,
+  updated_at,
+  approved_at,
+  rejected_at,
+  rejected_reason,
+  is_active
+`;
 
-        if(!hasSearchCriteria()){
-          resetList();
-          setStatus('listStatus','กรุณาเลือกเงื่อนไขก่อนแสดงรายการ','warn');
-          return;
-        }
+async function fetchRetestRequestRowsPaged(status){
+  const pageSize = 1000;
+  let from = 0;
+  const allRows = [];
 
-        state.rejectingId = null;
+  while(true){
+    let query = supabaseClient
+      .from('grade_retest_requests')
+      .select(RETEST_REQUEST_SELECT)
+      .eq('is_active', true)
+      .order('submitted_at', { ascending:false })
+      .range(from, from + pageSize - 1);
 
-       const status = safeText(el('filterStatus').value, '');
+    if(status){
+      query = query.eq('status', status);
+    }
 
-        let query = supabaseClient
-          .from('grade_retest_requests')
-          .select(`
-            id,
-            grade_result_id,
-            student_id,
-            student_code,
-            student_name,
-            subject_offering_id,
-            subject_id,
-            subject_code,
-            subject_name,
-            teacher_id,
-            teacher_code,
-            academic_year,
-            term,
-            class_level,
-            room,
-            original_grade_code,
-            requested_retest_grade_code,
-            status,
-            submitted_at,
-            updated_at,
-            approved_at,
-            rejected_at,
-            rejected_reason,
-            is_active
-          `)
-          .eq('is_active', true)
-          .order('submitted_at', { ascending:false });
+    const { data, error } = await query;
+    if(error) throw error;
 
-if(status){
-  query = query.eq('status', status);
+    const rows = Array.isArray(data) ? data : [];
+    allRows.push(...rows);
+
+    if(rows.length < pageSize){
+      break;
+    }
+
+    from += pageSize;
+  }
+
+  return allRows;
 }
 
-        setStatus('listStatus','กำลังโหลดรายการ...', 'info');
-
-        const { data, error } = await query;
-        if(error) throw error;
-
-        state.rows = data || [];
-        renderRows(state.rows);
-
-        if(state.rows.length){
-          setStatus('listStatus', `พบรายการ ${state.rows.length} รายการ`, 'success');
-        }else{
-          setStatus('listStatus', 'ไม่พบรายการตามเงื่อนไขที่เลือก', 'warn');
-        }
-      }catch(err){
-        console.error('loadRows ERROR', err);
-        state.rows = [];
-        renderRows([]);
-        setStatus('listStatus', err.message || 'โหลดรายการไม่สำเร็จ', 'error');
-        showToast('โหลดรายการไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
-      }
+async function loadRows(){
+  try{
+    if(!state.currentUser?.id){
+      throw new Error('ไม่พบข้อมูลผู้เข้าสู่ระบบ');
     }
+
+    if(!hasSearchCriteria()){
+      resetList();
+      setStatus('listStatus','กรุณาเลือกเงื่อนไขก่อนแสดงรายการ','warn');
+      return;
+    }
+
+    state.rejectingId = null;
+
+    const status = safeText(el('filterStatus').value, '');
+
+    setStatus('listStatus','กำลังโหลดรายการ...', 'info');
+
+    state.rows = await fetchRetestRequestRowsPaged(status);
+    renderRows(state.rows);
+
+    if(state.rows.length){
+      setStatus('listStatus', `พบรายการ ${state.rows.length} รายการ`, 'success');
+    }else{
+      setStatus('listStatus', 'ไม่พบรายการตามเงื่อนไขที่เลือก', 'warn');
+    }
+  }catch(err){
+    console.error('loadRows ERROR', err);
+    state.rows = [];
+    renderRows([]);
+    setStatus('listStatus', err.message || 'โหลดรายการไม่สำเร็จ', 'error');
+    showToast('โหลดรายการไม่สำเร็จ', err.message || 'เกิดข้อผิดพลาด', 'error');
+  }
+}
+
+async function refreshStudentReportCacheForRow(row){
+  const studentCodeForCache = safeText(row?.student_code, '');
+
+  if(!studentCodeForCache){
+    console.warn('ไม่พบ student_code สำหรับ refresh cache', row);
+    return { ok:false, skipped:true, message:'ไม่พบ student_code' };
+  }
+
+  const { error } = await supabaseClient.rpc('refresh_student_grade_report_cache', {
+    p_student_code: studentCodeForCache
+  });
+
+  if(error){
+    console.warn('refresh_student_grade_report_cache ERROR', error);
+    return { ok:false, skipped:false, message:error.message || 'อัปเดต cache ไม่สำเร็จ' };
+  }
+
+  return { ok:true, skipped:false, message:'อัปเดต cache สำเร็จ' };
+}
 
 async function approveRequest(requestId){
   try{
@@ -1386,11 +1428,24 @@ async function approveRequest(requestId){
       throw new Error('อัปเดตสถานะคำขอไม่สำเร็จ หรือรายการนี้ไม่อยู่ในสถานะรออนุมัติแล้ว');
     }
 
-    showToast(
-      'อนุมัติสำเร็จ',
-      `อนุมัติผลสอบแก้ตัวของ ${row.student_name} แล้ว`,
-      'success'
-    );
+    // 3) อัปเดต cache สำหรับ StudentPR เฉพาะนักเรียนคนนี้
+    // เมื่ออนุมัติแล้ว นักเรียนจะเห็นผลแก้ตัวล่าสุดทันที
+    setStatus('listStatus','อนุมัติสำเร็จแล้ว กำลังอัปเดตข้อมูลสำหรับ StudentPR...', 'info');
+    const cacheResult = await refreshStudentReportCacheForRow(row);
+
+    if(cacheResult.ok){
+      showToast(
+        'อนุมัติสำเร็จ',
+        `อนุมัติผลสอบแก้ตัวของ ${row.student_name} แล้ว และอัปเดตข้อมูล StudentPR เรียบร้อย`,
+        'success'
+      );
+    }else{
+      showToast(
+        'อนุมัติสำเร็จ แต่ StudentPR อาจยังไม่อัปเดต',
+        cacheResult.message || 'กรุณากดเติม cache ภายหลัง',
+        'warn'
+      );
+    }
 
     await loadRows();
   }catch(err){
