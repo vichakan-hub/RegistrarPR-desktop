@@ -1235,25 +1235,280 @@ function saveSession(){
 
 }
 
-    function restoreSession(){
-      try{
-        const raw = sessionStorage.getItem('retestApprovalUser');
-        if(!raw) return false;
+async function restoreSession(){
 
-        state.currentUser = JSON.parse(raw);
+  try{
 
-        if(!isRegistrarPageAllowed(state.currentUser.teacher_code)){
-          return false;
-        }
+    /*
+     * =====================================================
+     * 1) อ่าน opaque token จาก sessionStorage
+     * =====================================================
+     */
 
-        el('loginView').classList.add('hidden');
-        el('appView').classList.remove('hidden');
-        el('currentUserBox').innerHTML = `${escapeHtml(state.currentUser.teacher_code)} ${escapeHtml(state.currentUser.full_name || '')}`;
-        return true;
-      }catch(e){
-        return false;
-      }
+    const token =
+      String(
+        sessionStorage.getItem(
+          REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+        ) || ''
+      ).trim();
+
+
+    if(!token){
+
+      state.currentUser = null;
+      state.registrarSessionToken = null;
+      state.registrarSessionExpiresAt = null;
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_USER_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+      );
+
+      return false;
+
     }
+
+
+    /*
+     * =====================================================
+     * 2) ตรวจ Token กับ Database
+     * =====================================================
+     */
+
+    const { data, error } =
+      await supabaseClient.rpc(
+        'get_teacher_session_context',
+        {
+          p_token: token
+        }
+      );
+
+
+    if(error){
+      throw error;
+    }
+
+
+    const result =
+      Array.isArray(data)
+        ? data[0]
+        : data;
+
+
+    /*
+     * =====================================================
+     * 3) Session ต้องถูกต้อง
+     * =====================================================
+     */
+
+    if(
+      !result ||
+      result.ok !== true ||
+      !result.user
+    ){
+
+      state.currentUser = null;
+      state.registrarSessionToken = null;
+      state.registrarSessionExpiresAt = null;
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_USER_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+      );
+
+      return false;
+
+    }
+
+
+    /*
+     * =====================================================
+     * 4) User ต้องมาจาก Database เท่านั้น
+     * =====================================================
+     */
+
+    const user =
+      result.user || {};
+
+
+    const code =
+      normalizeTeacherCode(
+        user.teacher_code || ''
+      );
+
+
+    /*
+     * Desktop หน้านี้อนุญาตเฉพาะ G / admin
+     * =====================================================
+     */
+
+    if(
+      !isRegistrarPageAllowed(code) ||
+      String(
+        user.account_type || ''
+      ) !== 'admin'
+    ){
+
+      state.currentUser = null;
+      state.registrarSessionToken = null;
+      state.registrarSessionExpiresAt = null;
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_USER_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+      );
+
+      sessionStorage.removeItem(
+        REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+      );
+
+      return false;
+
+    }
+
+
+    /*
+     * =====================================================
+     * 5) สร้าง currentUser จากข้อมูลที่ DB ยืนยันแล้ว
+     * =====================================================
+     */
+
+    state.currentUser = {
+
+      id:
+        user.id || '',
+
+      teacher_code:
+        code,
+
+      first_name:
+        user.first_name || '',
+
+      last_name:
+        user.last_name || '',
+
+      full_name:
+        user.full_name ||
+        [
+          user.first_name || '',
+          user.last_name || ''
+        ]
+          .join(' ')
+          .trim() ||
+        code,
+
+      account_type:
+        'admin',
+
+      role_prefix:
+        'G',
+
+      teacher_role:
+        'registrar',
+
+      is_active:
+        true
+
+    };
+
+
+    state.registrarSessionToken =
+      token;
+
+
+    /*
+     * expires_at ใช้ค่าที่ Database ส่งกลับเท่านั้น
+     * =====================================================
+     */
+
+    state.registrarSessionExpiresAt =
+      result.expires_at || null;
+
+
+    /*
+     * =====================================================
+     * 6) Normalize Storage
+     *
+     * saveSession() จะเก็บเฉพาะ token + expires_at
+     * =====================================================
+     */
+
+    saveSession();
+
+
+    /*
+     * =====================================================
+     * 7) เปิดหน้า Application
+     * =====================================================
+     */
+
+    el('loginView')
+      .classList.add('hidden');
+
+
+    el('appView')
+      .classList.remove('hidden');
+
+
+    el('currentUserBox').innerHTML =
+      `${escapeHtml(
+        state.currentUser.teacher_code
+      )} ${escapeHtml(
+        state.currentUser.full_name || ''
+      )}`;
+
+
+    return true;
+
+
+  }catch(error){
+
+    console.warn(
+      'RESTORE REGISTRAR DESKTOP SESSION ERROR',
+      error
+    );
+
+
+    state.currentUser = null;
+    state.registrarSessionToken = null;
+    state.registrarSessionExpiresAt = null;
+
+
+    sessionStorage.removeItem(
+      REGISTRAR_DESKTOP_USER_SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+      REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+    );
+
+    sessionStorage.removeItem(
+      REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+    );
+
+
+    return false;
+
+  }
+
+}
 
     function togglePassword(){
       const input = el('loginPassword');
@@ -1805,17 +2060,46 @@ async function approveRequest(requestId){
 });
     }
 
-    function init(){
-      initDefaultFilters();
-      bindEvents();
-      resetSummary();
+async function init(){
 
-      if(restoreSession()){
-        setStatus('listStatus','กรุณาเลือกเงื่อนไขแล้วกดแสดงรายการ','info');
-      }else{
-        setStatus('loginStatus','กรุณาเข้าสู่ระบบก่อนใช้งาน','info');
-      }
-    }
+  initDefaultFilters();
+
+  bindEvents();
+
+  resetSummary();
+
+
+  const restored =
+    await restoreSession();
+
+
+  if(restored){
+
+    setStatus(
+      'listStatus',
+      'กรุณาเลือกเงื่อนไขแล้วกดแสดงรายการ',
+      'info'
+    );
+
+  }else{
+
+    el('appView')
+      .classList.add('hidden');
+
+
+    el('loginView')
+      .classList.remove('hidden');
+
+
+    setStatus(
+      'loginStatus',
+      'กรุณาเข้าสู่ระบบก่อนใช้งาน',
+      'info'
+    );
+
+  }
+
+}
 
     document.addEventListener('DOMContentLoaded', init);
   </script>
