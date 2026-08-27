@@ -1563,20 +1563,154 @@ saveSession();
       }
     }
 
-    function logout(){
-      state.currentUser = null;
-      state.rows = [];
-      state.rejectingId = null;
+async function logout(){
 
-      sessionStorage.removeItem('retestApprovalUser');
+  /*
+   * =====================================================
+   * 1) เก็บ Token ไว้ก่อนล้าง State
+   * =====================================================
+   */
 
-      el('appView').classList.add('hidden');
-      el('loginView').classList.remove('hidden');
-      el('loginPassword').value = '';
+  const token =
+    String(
+      state.registrarSessionToken ||
+      sessionStorage.getItem(
+        REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+      ) ||
+      ''
+    ).trim();
 
-      resetList();
-      setStatus('loginStatus','ออกจากระบบแล้ว','info');
+
+  /*
+   * =====================================================
+   * 2) Revoke Session ที่ Database
+   *
+   * ถึง RPC จะ error ก็ยังต้อง Logout
+   * ฝั่ง Browser ต่อไป
+   * =====================================================
+   */
+
+  if(token){
+
+    try{
+
+      const { data, error } =
+        await supabaseClient.rpc(
+          'logout_teacher_session',
+          {
+            p_token: token
+          }
+        );
+
+
+      if(error){
+        throw error;
+      }
+
+
+      const result =
+        Array.isArray(data)
+          ? data[0]
+          : data;
+
+
+      if(
+        result &&
+        result.ok === false
+      ){
+
+        console.warn(
+          'REGISTRAR DESKTOP LOGOUT RPC WARNING',
+          result.message || result
+        );
+
+      }
+
+    }catch(error){
+
+      console.warn(
+        'REGISTRAR DESKTOP SESSION REVOKE ERROR',
+        error
+      );
+
     }
+
+  }
+
+
+  /*
+   * =====================================================
+   * 3) ล้าง State
+   * =====================================================
+   */
+
+  state.currentUser = null;
+
+  state.registrarSessionToken = null;
+
+  state.registrarSessionExpiresAt = null;
+
+  state.rows = [];
+
+  state.rejectingId = null;
+
+
+  /*
+   * =====================================================
+   * 4) ล้าง Session Storage ทั้งของเก่าและของใหม่
+   * =====================================================
+   */
+
+  sessionStorage.removeItem(
+    REGISTRAR_DESKTOP_USER_SESSION_KEY
+  );
+
+  sessionStorage.removeItem(
+    REGISTRAR_DESKTOP_TOKEN_SESSION_KEY
+  );
+
+  sessionStorage.removeItem(
+    REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+  );
+
+
+  /*
+   * =====================================================
+   * 5) กลับหน้า Login
+   * =====================================================
+   */
+
+  el('appView')
+    .classList.add('hidden');
+
+
+  el('loginView')
+    .classList.remove('hidden');
+
+
+  if(el('loginPassword')){
+
+    el('loginPassword').value = '';
+
+  }
+
+
+  /*
+   * =====================================================
+   * 6) Reset รายการ
+   * =====================================================
+   */
+
+  resetList();
+
+
+  setStatus(
+    'loginStatus',
+    'ออกจากระบบแล้ว',
+    'info'
+  );
+
+}
 
     function resetSummary(){
       el('sumTotal').textContent = '0';
