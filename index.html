@@ -852,6 +852,21 @@
 
     const el = (id) => document.getElementById(id);
 
+    /*
+ * =====================================================
+ * RegistrarPR Desktop Session Storage
+ * =====================================================
+ */
+
+const REGISTRAR_DESKTOP_USER_SESSION_KEY =
+  'retestApprovalUser';
+
+const REGISTRAR_DESKTOP_TOKEN_SESSION_KEY =
+  'retestApprovalSessionToken';
+
+const REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY =
+  'retestApprovalSessionExpiresAt';
+
 const state = {
   currentUser: null,
 
@@ -1129,10 +1144,96 @@ function initDefaultFilters(){
   el('filterStatus').value = 'pending_approval';
 }
 
-    function saveSession(){
-      if(!state.currentUser) return;
-      sessionStorage.setItem('retestApprovalUser', JSON.stringify(state.currentUser));
-    }
+function saveSession(){
+
+  /*
+   * =====================================================
+   * 1) ต้องมี Session Token จาก Database
+   * =====================================================
+   */
+
+  const token =
+    String(
+      state.registrarSessionToken || ''
+    ).trim();
+
+
+  if(!token){
+
+    console.warn(
+      'REGISTRAR DESKTOP SAVE SESSION SKIPPED: missing token'
+    );
+
+    return;
+
+  }
+
+
+  /*
+   * =====================================================
+   * 2) expires_at มาจาก Database
+   * =====================================================
+   */
+
+  const expiresAt =
+    state.registrarSessionExpiresAt
+      ? String(
+          state.registrarSessionExpiresAt
+        )
+      : '';
+
+
+  /*
+   * =====================================================
+   * 3) ลบ Session แบบเก่า
+   *
+   * ห้ามใช้ Browser-stored currentUser
+   * เป็นหลักฐานสิทธิ์อีกต่อไป
+   * =====================================================
+   */
+
+  sessionStorage.removeItem(
+    REGISTRAR_DESKTOP_USER_SESSION_KEY
+  );
+
+
+  /*
+   * =====================================================
+   * 4) เก็บเฉพาะ opaque token
+   * =====================================================
+   */
+
+  sessionStorage.setItem(
+    REGISTRAR_DESKTOP_TOKEN_SESSION_KEY,
+    token
+  );
+
+
+  /*
+   * =====================================================
+   * 5) เก็บ expires_at เพื่อข้อมูลประกอบ
+   *
+   * แต่ restore รอบถัดไปจะยังต้องให้
+   * Database ตรวจ token จริงอีกครั้ง
+   * =====================================================
+   */
+
+  if(expiresAt){
+
+    sessionStorage.setItem(
+      REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY,
+      expiresAt
+    );
+
+  }else{
+
+    sessionStorage.removeItem(
+      REGISTRAR_DESKTOP_EXPIRES_SESSION_KEY
+    );
+
+  }
+
+}
 
     function restoreSession(){
       try{
