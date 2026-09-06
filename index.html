@@ -2001,25 +2001,7 @@ async function loadRows(){
   }
 }
 
-async function refreshStudentReportCacheForRow(row){
-  const studentCodeForCache = safeText(row?.student_code, '');
 
-  if(!studentCodeForCache){
-    console.warn('ไม่พบ student_code สำหรับ refresh cache', row);
-    return { ok:false, skipped:true, message:'ไม่พบ student_code' };
-  }
-
-  const { error } = await supabaseClient.rpc('refresh_student_grade_report_cache', {
-    p_student_code: studentCodeForCache
-  });
-
-  if(error){
-    console.warn('refresh_student_grade_report_cache ERROR', error);
-    return { ok:false, skipped:false, message:error.message || 'อัปเดต cache ไม่สำเร็จ' };
-  }
-
-  return { ok:true, skipped:false, message:'อัปเดต cache สำเร็จ' };
-}
 
 async function approveRequest(requestId){
 
@@ -2146,57 +2128,39 @@ async function approveRequest(requestId){
     }
 
 
-    /*
-     * =====================================================
-     * 5) อัปเดต StudentPR cache
-     * =====================================================
-     */
 
-    setStatus(
-      'listStatus',
-      'อนุมัติสำเร็จแล้ว กำลังอัปเดตข้อมูลสำหรับ StudentPR...',
-      'info'
-    );
+/*
+ * =====================================================
+ * 5) อนุมัติสำเร็จ
+ *
+ * registrar_approve_retest_request_session()
+ * Refresh StudentPR cache ภายใน Database แล้ว
+ *
+ * Browser ไม่ต้องเรียก
+ * refresh_student_grade_report_cache() ซ้ำ
+ * =====================================================
+ */
 
-
-    const cacheResult =
-      await refreshStudentReportCacheForRow(
-        row
-      );
-
-
-    /*
-     * =====================================================
-     * 6) แจ้งผล
-     * =====================================================
-     */
-
-    const studentName =
-      safeText(
-        result.student_name ||
-        row.student_name,
-        '-'
-      );
+const studentName =
+  safeText(
+    result.student_name ||
+    row.student_name,
+    '-'
+  );
 
 
-    if(cacheResult.ok){
+setStatus(
+  'listStatus',
+  'อนุมัติผลสอบแก้ตัวเรียบร้อยแล้ว',
+  'success'
+);
 
-      showToast(
-        'อนุมัติสำเร็จ',
-        `อนุมัติผลสอบแก้ตัวของ ${studentName} แล้ว และอัปเดตข้อมูล StudentPR เรียบร้อย`,
-        'success'
-      );
 
-    }else{
-
-      showToast(
-        'อนุมัติสำเร็จ แต่ StudentPR อาจยังไม่อัปเดต',
-        cacheResult.message ||
-        'กรุณาอัปเดต cache ภายหลัง',
-        'warn'
-      );
-
-    }
+showToast(
+  'อนุมัติสำเร็จ',
+  `อนุมัติผลสอบแก้ตัวของ ${studentName} แล้ว และอัปเดต StudentPR แล้ว`,
+  'success'
+);
 
 
     /*
