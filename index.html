@@ -4,7 +4,7 @@
   <base target="_top">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>RegistrarPR</title>
+  <title>RegistrarPR | ระบบบริหารจัดการงานทะเบียน</title>
   <!-- RegistrarPR PWA: relative URLs support GitHub Pages project paths. -->
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
@@ -1995,60 +1995,44 @@ function hasSearchCriteria(){
   return true;
 }
 
-const RETEST_REQUEST_SELECT = `
-  id,
-  grade_result_id,
-  student_id,
-  student_code,
-  student_name,
-  subject_offering_id,
-  subject_id,
-  subject_code,
-  subject_name,
-  teacher_id,
-  teacher_code,
-  academic_year,
-  term,
-  class_level,
-  room,
-  original_grade_code,
-  requested_retest_grade_code,
-  status,
-  submitted_at,
-  updated_at,
-  approved_at,
-  rejected_at,
-  rejected_reason,
-  is_active
-`;
-
+// RegistrarPR v5: read requests only through the existing session-secured RPC.
 async function fetchRetestRequestRowsPaged(status){
+  const token = String(state.registrarSessionToken || '').trim();
+  if(!token){
+    throw new Error('Session หมดอายุ กรุณาเข้าสู่ระบบใหม่');
+  }
+
   const pageSize = 1000;
   let from = 0;
   const allRows = [];
+  const selectedStatus = String(status || '').trim() || null;
 
   while(true){
-    let query = supabaseClient
-      .from('grade_retest_requests')
-      .select(RETEST_REQUEST_SELECT)
-      .eq('is_active', true)
-      .order('submitted_at', { ascending:false })
-      .range(from, from + pageSize - 1);
-
-    if(status){
-      query = query.eq('status', status);
+    if(state.registrarSessionToken !== token){
+      throw new Error('Session เปลี่ยนแปลง กรุณาโหลดรายการใหม่');
     }
 
-    const { data, error } = await query;
+    const { data, error } = await supabaseClient.rpc(
+      'registrar_get_retest_requests_session',
+      {
+        p_token: token,
+        p_status: selectedStatus,
+        p_limit: pageSize,
+        p_offset: from
+      }
+    );
+
     if(error) throw error;
-
-    const rows = Array.isArray(data) ? data : [];
-    allRows.push(...rows);
-
-    if(rows.length < pageSize){
-      break;
+    if(state.registrarSessionToken !== token){
+      throw new Error('Session เปลี่ยนแปลง กรุณาโหลดรายการใหม่');
+    }
+    if(!Array.isArray(data)){
+      throw new Error('รูปแบบข้อมูลรายการสอบแก้ตัวไม่ถูกต้อง');
     }
 
+    allRows.push(...data);
+
+    if(data.length < pageSize) break;
     from += pageSize;
   }
 

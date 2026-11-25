@@ -1,4 +1,4 @@
-/* RegistrarPR PWA v4 — online-only, no personal-data caching. */
+/* RegistrarPR PWA v5 — online-only, no personal-data caching. */
 'use strict';
 self.addEventListener('install', event => event.waitUntil(self.skipWaiting()));
 self.addEventListener('activate', event => event.waitUntil(self.clients.claim()));
