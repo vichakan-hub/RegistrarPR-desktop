@@ -661,12 +661,15 @@
         max-width:none;
       }
     }
-/* RegistrarPR – Personal history module */
-.reg-layout{display:grid;grid-template-columns:230px minmax(0,1fr);gap:16px;align-items:start}
-.reg-side{padding:14px;position:sticky;top:16px;display:grid;gap:8px}
-.reg-side .small{padding:4px 8px;font-weight:700}
-.reg-menu{height:auto;min-height:50px;text-align:left;background:transparent;display:flex;align-items:center;gap:9px;padding:10px 12px;font-size:15px;color:var(--text)}
-.reg-menu.active{background:#dbeafe;color:#1d4ed8;font-weight:700}
+/* RegistrarPR – horizontal tab navigation */
+.reg-layout{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+.reg-tabs.card{display:flex;align-items:stretch;gap:6px;padding:8px;min-width:0;border-radius:18px}
+.reg-menu{position:relative;flex:0 1 auto;height:auto;min-height:48px;text-align:center;justify-content:center;background:transparent;display:flex;align-items:center;gap:8px;padding:10px 22px;font-size:16px;line-height:1.4;color:#53657d;border:1px solid transparent;border-radius:12px;font-weight:600;transition:background .15s,color .15s}
+.reg-menu:hover{background:#edf3fc;color:var(--primary-dark)}
+.reg-menu.active{background:#dbeafe;border-color:#bfd7fc;color:#1d4ed8;font-weight:700}
+.reg-menu.active::after{content:"";position:absolute;bottom:0;left:16px;right:16px;height:3px;border-radius:3px 3px 0 0;background:var(--primary)}
+.reg-menu:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+@media(max-width:650px){.reg-tabs.card{gap:5px;padding:6px}.reg-menu{flex:1 1 0;min-width:0;min-height:52px;padding:9px 6px;font-size:14px;white-space:normal;overflow-wrap:anywhere}}
 .reg-main{min-width:0}.reg-main>.card{padding:22px}
 .ph-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
 .ph-head h2{margin:0 0 4px}.ph-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
@@ -689,7 +692,7 @@
 .ph-modal iframe{width:100%;height:65vh;border:1px solid var(--line);border-radius:8px;background:#eef2f7}
 .ph-link{display:inline-flex;align-items:center;text-decoration:none;color:#fff;background:var(--primary);padding:10px 14px;border-radius:12px;font-weight:600}
 .ph-link.secondary{color:var(--text);background:#edf2f8}button:disabled{opacity:.5;cursor:not-allowed}
-@media(max-width:1000px){.reg-layout{grid-template-columns:1fr}.reg-side{position:static;display:flex;flex-wrap:wrap;align-items:center}.reg-menu{flex:1;min-width:160px}.ph-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:1000px){.ph-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.reg-main>.card{padding:14px}.ph-filters,.ph-grid,.ph-signs{grid-template-columns:1fr}.ph-grid .ph-wide{grid-column:auto}.ph-head h2{font-size:21px}.ph-modal{padding:8px}.ph-modal-body{padding:12px}.ph-modal iframe{height:55vh}}
 
   </style>
@@ -800,11 +803,10 @@
       </section>
 
       <div class="reg-layout">
-        <aside class="reg-side card" aria-label="เมนูหลัก">
-          <div class="small">เมนูหลัก · REGISTRAR</div>
-          <button type="button" id="regMenuApproval" class="reg-menu active" aria-current="page">✅ อนุมัติผลสอบแก้ตัว</button>
-          <button type="button" id="regMenuHistory" class="reg-menu" aria-current="false">📋 บันทึกแจ้งประวัติบุคคล</button>
-        </aside>
+        <nav class="reg-tabs card" aria-label="เมนูหลัก RegistrarPR">
+          <button type="button" id="regMenuApproval" class="reg-menu active" aria-current="page" aria-controls="approvalPanel">✅ อนุมัติผลสอบแก้ตัว</button>
+          <button type="button" id="regMenuHistory" class="reg-menu" aria-current="false" aria-controls="personalHistoryPanel">📋 บันทึกแจ้งประวัติบุคคล</button>
+        </nav>
         <main class="reg-main">
       <section id="approvalPanel" class="card">
         <h2 style="margin:0 0 8px;">รายการรออนุมัติผลสอบแก้ตัว</h2>
