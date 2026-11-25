@@ -5,6 +5,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RegistrarPR | ระบบบริหารจัดการงานทะเบียน</title>
+  <!-- RegistrarPR PWA: relative URLs support GitHub Pages project paths. -->
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png">
+  <meta name="theme-color" content="#2563eb">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="RegistrarPR">
+
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -744,6 +753,7 @@
 
           <button id="loginBtn" class="login-btn">↪ เข้าสู่ระบบ</button>
           <div id="loginStatus" class="status info"></div>
+          <button type="button" id="pwaInstallLogin" class="btn-secondary hidden" style="width:100%;margin-top:8px">📲 ติดตั้งแอป RegistrarPR</button>
 
           <div class="login-note">
             ℹ️ หน้านี้อนุญาตเฉพาะผู้ใช้รหัส <strong>G</strong><br>
@@ -798,6 +808,7 @@
 
         <div class="user-actions">
           <div id="currentUserBox" class="user-pill">-</div>
+          <button type="button" id="pwaInstallApp" class="btn-secondary hidden">📲 ติดตั้งแอป</button>
           <button id="logoutBtn" class="btn-danger">ออกจากระบบ</button>
         </div>
       </section>
@@ -2688,6 +2699,67 @@ async function phPrint(id){if(PH.busy||!phActive())return;if(PH.dirty){setStatus
 function phBind(){phBuildFields();el('regMenuApproval').onclick=()=>phSwitch('approval');el('regMenuHistory').onclick=()=>phSwitch('history');el('phAdd').onclick=phNew;el('phSettings').onclick=phOpenSettings;el('phBack').onclick=phBackToList;el('phCancel').onclick=phBackToList;el('phSettingsBack').onclick=phBackToList;el('phForm').addEventListener('submit',phSaveRecord);el('phSettingsForm').addEventListener('submit',phSaveSettings);el('phForm').addEventListener('input',()=>{if(!PH.readonly&&!PH.busy){PH.dirty=true;phUpdateSigns();}});el('phReceiver').addEventListener('input',()=>{PH.dirty=true;});el('phSearchForm').addEventListener('submit',e=>{e.preventDefault();if(PH.busy)return;PH.search=el('phSearch').value.trim();PH.year=el('phYear').value?Number(el('phYear').value):null;phLoadList(0);});el('phClearSearch').onclick=()=>{el('phSearchForm').reset();PH.search='';PH.year=null;phLoadList(0);};el('phPrev').onclick=()=>phLoadList(Math.max(0,PH.offset-PH.limit));el('phNext').onclick=()=>phLoadList(PH.offset+PH.limit);el('phFormPrint').onclick=()=>{if(PH.record)phPrint(PH.record.id);};el('phPdfClose').onclick=phClosePdf;document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!el('phPdfModal').classList.contains('hidden'))phClosePdf();});window.addEventListener('beforeunload',e=>{if(PH.dirty&&phActive()){e.preventDefault();e.returnValue='';}});phSetMenu('approval');phRenderRows();}
 
     document.addEventListener('DOMContentLoaded', init);
+  </script>
+  <script>
+  (() => {
+    'use strict';
+    let installPrompt = null;
+    const standalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    const buttons = () => [document.getElementById('pwaInstallLogin'), document.getElementById('pwaInstallApp')].filter(Boolean);
+    const syncButtons = () => buttons().forEach(b => b.classList.toggle('hidden', standalone()));
+    window.addEventListener('beforeinstallprompt', event => {
+      event.preventDefault();
+      installPrompt = event;
+      syncButtons();
+    });
+    window.addEventListener('appinstalled', () => {
+      installPrompt = null;
+      buttons().forEach(b => b.classList.add('hidden'));
+    });
+    async function installApp() {
+      if (standalone()) return;
+      if (installPrompt) {
+        const prompt = installPrompt;
+        installPrompt = null;
+        try {
+          await prompt.prompt();
+          const choice = await prompt.userChoice;
+          if (choice.outcome === 'accepted') buttons().forEach(b => b.classList.add('hidden'));
+        } catch (error) {
+          console.warn('RegistrarPR install prompt unavailable', error);
+          showInstallHelp();
+        }
+        return;
+      }
+      showInstallHelp();
+    }
+    function showInstallHelp() {
+      if (/iPhone|iPad|iPod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) {
+        alert('iPhone / iPad: เปิดเว็บไซต์ด้วย Safari → แชร์ → เพิ่มไปยังหน้าจอโฮม (Add to Home Screen) → เพิ่ม');
+      } else {
+        alert('Chrome / Edge: เปิดเมนูเบราว์เซอร์ แล้วเลือกติดตั้งแอป (Install app) หรือใช้ไอคอนติดตั้งในแถบที่อยู่ หากไม่มีตัวเลือก ให้ตรวจสอบว่าเว็บไซต์ใช้ HTTPS และ Manifest โหลดสำเร็จ');
+      }
+    }
+    buttons().forEach(b => b.addEventListener('click', installApp));
+    syncButtons();
+    const mode = window.matchMedia('(display-mode: standalone)');
+    if (mode.addEventListener) mode.addEventListener('change', syncButtons);
+    else if (mode.addListener) mode.addListener(syncButtons);
+    if ('serviceWorker' in navigator && window.isSecureContext) {
+      window.addEventListener('load', async () => {
+        try {
+          const registration = await navigator.serviceWorker.register('./sw.js', {scope:'./', updateViaCache:'none'});
+          // Check for a newer worker without reloading an open form or losing unsaved data.
+          registration.update().catch(error => console.warn('RegistrarPR update check failed', error));
+          document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') registration.update().catch(() => {});
+          });
+        } catch (error) {
+          console.warn('RegistrarPR service worker registration failed', error);
+        }
+      }, {once:true});
+    }
+  })();
   </script>
 </body>
 </html>
